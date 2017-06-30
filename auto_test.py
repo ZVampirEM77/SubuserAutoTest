@@ -11,7 +11,8 @@ import time
 import argparse
 import subprocess
 
-ceph_path = "../../ceph/build/"
+ceph_version = '<K'
+ceph_path = "/home/zvampirem/subuser/ceph/src/"
 py_dir = os.getcwd()
 
 def exec_command(command):
@@ -75,12 +76,28 @@ def verify_show_response_msg(req_command, expect_dict):
 
     return result
 
+def exec_based_on_version(command):
+    req_command = ''
+    if ceph_version == '>=K':
+        req_command = './bin/' + command
+    else:
+	req_command = './' + command
+    exec_command(req_command)
+
+def verify_show_based_on_version(command, expect_dict):
+    req_command = ''
+    if ceph_version == '>=K':
+        req_command = './bin/' + command
+    else:
+	req_command = './' + command
+    return verify_show_response_msg(req_command, expect_dict)
+
 class TestCase1(object):
     def prepare(self):
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser2 --access=full --access-key=subuser2 --secret-key=subuser2')
+        exec_based_on_version('radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser2 --access=full --access-key=subuser2 --secret-key=subuser2')	
         os.chdir(py_dir)
 	exec_command('s3cmd -c user1.s3cfg mb s3://test1')
         exec_command('s3cmd -c subuser1.s3cfg put user1.s3cfg s3://test1')
@@ -100,9 +117,9 @@ class TestCase1(object):
         self.prepare()
         result1 = result2 = result3 = False
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)	
         os.chdir(py_dir)
 
 	if result1 == result2 == result3 == True:
@@ -117,16 +134,16 @@ class TestCase1(object):
         exec_command('s3cmd -c subuser2.s3cfg rb s3://test2')
 	time.sleep(30)
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin usage trim --uid=user1')
-        exec_command('./bin/radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
+        exec_based_on_version('radosgw-admin usage trim --uid=user1')
+        exec_based_on_version('radosgw-admin user rm --uid=user1 --purge-data --purge-keys')	
         os.chdir(py_dir)
 
 class TestCase2(object):
     def prepare(self):
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser2 --access=full --access-key=subuser2 --secret-key=subuser2')
+        exec_based_on_version('radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser2 --access=full --access-key=subuser2 --secret-key=subuser2')	
         os.chdir(py_dir) 
 
     def op1(self):
@@ -150,8 +167,8 @@ class TestCase2(object):
 	expect_dict2 = {"entries_size": 1,
 			"user1": {"test1": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict1)
-        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict2)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict1)
+        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict2)	
         os.chdir(py_dir)
 	if result1 == result2 == True:
 	    self.op2()
@@ -163,9 +180,9 @@ class TestCase2(object):
 	    expect_dict5 = {"entries_size": 1,
 			    "user1:subuser1": {"test1": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
 	    os.chdir(ceph_path)
-	    result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict4)
-	    result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
+	    result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict4)
+	    result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5) 
             os.chdir(py_dir)
 	    if result1 == result2 ==result3 == True:
                 self.op3()
@@ -177,9 +194,9 @@ class TestCase2(object):
 		expect_dict8 = {"entries_size": 1,
 			        "user1:subuser2": {"test1": {"categories": {"put_obj": {"ops": 1, "successful_ops": 1}}}}}
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict6)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict7)
-	        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict8)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict6)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict7)
+	        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict8)	
                 os.chdir(py_dir)
                 if result1 == result2 ==result3 == True:
                     print "testcase2                          %s" % (ok_display("OK"))
@@ -218,9 +235,9 @@ class TestCase3(object):
 	expect_dict3 = {"entries_size": 1,
 			"user1:subuser2": {"test1": {"categories": {"put_obj": {"ops": 1, "successful_ops": 1}}}}}
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-	result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+	result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+	result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)	
         os.chdir(py_dir)
 	if result1 == result2 == result3 == True:
             self.op2()	
@@ -234,9 +251,9 @@ class TestCase3(object):
 	    expect_dict6 = {"entries_size": 1,
 			    "user1:subuser2": {"test1": {"categories": {"put_obj": {"ops": 1, "successful_ops": 1}}}}}
 	    os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict4)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
-	    result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict4)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
+	    result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6) 
             os.chdir(py_dir)
 	    if result1 == result2 ==result3 == True:
                 self.op3()
@@ -251,9 +268,9 @@ class TestCase3(object):
 			        "user1:subuser2": {"test1": {"categories": {"put_obj": {"ops": 1, "successful_ops": 1},
 					                                    "get_obj": {"ops": 2, "successful_ops": 2}}}}}
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict7)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
-	        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict7)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
+	        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)	
                 os.chdir(py_dir)
 		if result1 == result2 ==result3 == True:
                     print "testcase3                          %s" % (ok_display("OK"))
@@ -292,9 +309,9 @@ class TestCase4(object):
 			"user1:subuser2": {"test1": {"categories": {"put_obj": {"ops": 1, "successful_ops": 1},
 					                            "get_obj": {"ops": 2, "successful_ops": 2}}}}}
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-	result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+	result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+	result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)	
         os.chdir(py_dir)
 	if result1 == result2 == result3 == True:
 	    self.op2()
@@ -311,9 +328,9 @@ class TestCase4(object):
 					                                "get_obj": {"ops": 2, "successful_ops": 2},
 									"delete_obj": {"ops": 1, "successful_ops": 1}}}}}
 	    os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict4)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
-	    result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict4)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
+	    result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6) 
             os.chdir(py_dir)
 	    if result1 == result2 == result3 == True:
                 self.op3()
@@ -331,9 +348,9 @@ class TestCase4(object):
 					                                    "get_obj": {"ops": 2, "successful_ops": 2},
 									    "delete_obj": {"ops": 1, "successful_ops": 1}}}}}
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict7)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
-	        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict7)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
+	        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)	
                 os.chdir(py_dir)
 		if result1 == result2 ==result3 == True:
                     print "testcase4                          %s" % (ok_display("OK"))
@@ -348,17 +365,17 @@ class TestCase4(object):
 
     def clean(self):
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin usage trim --uid=user1')
-        exec_command('./bin/radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
+        exec_based_on_version('radosgw-admin usage trim --uid=user1')
+        exec_based_on_version('radosgw-admin user rm --uid=user1 --purge-data --purge-keys')	
         os.chdir(py_dir)
 	exec_command('rm 3*.txt')
 
 class TestCase5(object):
     def prepare(self):
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser2 --access=full --access-key=subuser2 --secret-key=subuser2')
+        exec_based_on_version('radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser2 --access=full --access-key=subuser2 --secret-key=subuser2')	
         os.chdir(py_dir)
 
     def op1(self):
@@ -388,9 +405,9 @@ class TestCase5(object):
 			"user1:subuser1": {"test1": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
 	expect_dict3 = {"entries_size": 0}
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)	
         os.chdir(py_dir)
 	if result1 == result2 == result3 == True:
             self.op2()
@@ -402,9 +419,9 @@ class TestCase5(object):
 	    expect_dict6 = {"entries_size": 1,
 			    "user1:subuser2": {"test2": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
             os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict4)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
-            result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict4)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
+            result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6) 
             os.chdir(py_dir)
 	    if result1 == result2 == result3 == True:
                 self.op3()	
@@ -418,9 +435,9 @@ class TestCase5(object):
 		expect_dict9 = {"entries_size": 1,
 			        "user1:subuser2": {"test2": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict7)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
-                result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict7)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
+                result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)	
                 os.chdir(py_dir)
 		if result1 == result2 == result3 == True:
 		    self.op4()
@@ -436,9 +453,9 @@ class TestCase5(object):
 		    expect_dict12 = {"entries_size": 1,
 			             "user1:subuser2": {"test2": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
                     os.chdir(ceph_path)
-                    result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict10)
-	            result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict11)
-                    result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict12)
+                    result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict10)
+	            result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict11)
+                    result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict12) 
                     os.chdir(py_dir)
 		    if result1 == result2 == result3 == True:
 	                print "testcase5                          %s" % (ok_display("OK"))
@@ -483,9 +500,9 @@ class TestCase6(object):
 			"user1:subuser2": {"test2": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
 
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)	
         os.chdir(py_dir)
 	if result1 == result2 == result3 == True:
             self.op2()
@@ -505,9 +522,9 @@ class TestCase6(object):
 	    expect_dict6 = {"entries_size": 1,
 			    "user1:subuser2": {"test2": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
 	    os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict4)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
-            result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict4)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
+            result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6) 
             os.chdir(py_dir)
 	    if result1 == result2 == result3 == True:
                 self.op3()
@@ -529,9 +546,9 @@ class TestCase6(object):
 					                                    "get_obj": {"ops": 1, "successful_ops": 1}}},
 				                    "test3": {"categories": {"get_obj": {"ops": 1, "successful_ops": 1}}}}}
 		os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict7)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
-                result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict7)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
+                result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)	
                 os.chdir(py_dir)
 		if result1 == result2 == result3 == True:
 		    print "testcase6                          %s" % (ok_display("OK"))
@@ -585,9 +602,9 @@ class TestCase7(object):
 					                            "get_obj": {"ops": 1, "successful_ops": 1}}},
 				           "test3": {"categories": {"get_obj": {"ops": 1, "successful_ops": 1}}}}}
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)	
         os.chdir(py_dir)
 	if result1 == result2 == result3 == True:
             self.op2()
@@ -615,9 +632,9 @@ class TestCase7(object):
 					                                "get_obj": {"ops": 1, "successful_ops": 1}}},
 				               "test3": {"categories": {"get_obj": {"ops": 1, "successful_ops": 1}}}}}
             os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict4)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
-            result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict4)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
+            result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6) 
             os.chdir(py_dir)
 	    if result1 == result2 == result3 == True:
 	        self.op3()
@@ -648,9 +665,9 @@ class TestCase7(object):
 				                   "test3": {"categories": {"get_obj": {"ops": 1, "successful_ops": 1},
 							                    "list_bucket": {"ops": 1, "successful_ops": 1}}}}}
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict7)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
-                result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict7)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
+                result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)	
                 os.chdir(py_dir)
 		if result1 == result2 == result3 == True:
                     print "testcase7                          %s" % (ok_display("OK"))
@@ -713,9 +730,9 @@ class TestCase8(object):
 				           "test3": {"categories": {"get_obj": {"ops": 1, "successful_ops": 1},
 					                            "list_bucket": {"ops": 1, "successful_ops": 1}}}}}
 	os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+	result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)	
         os.chdir(py_dir)
 	if result1 == result2 == result3 == True:
             self.op2()	
@@ -749,9 +766,9 @@ class TestCase8(object):
 				               "test3": {"categories": {"get_obj": {"ops": 1, "successful_ops": 1},
 					                                "list_bucket": {"ops": 1, "successful_ops": 1}}}}}
 	    os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict4)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
-            result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict4)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict5)
+            result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict6)
             os.chdir(py_dir)    
 	    if result1 == result2 == result3 == True:
                 self.op3()
@@ -787,9 +804,9 @@ class TestCase8(object):
 				                   "test3": {"categories": {"get_obj": {"ops": 1, "successful_ops": 1},
 					                                    "list_bucket": {"ops": 1, "successful_ops": 1}}}}}
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict7)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
-                result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict7)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
+                result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict9)
                 os.chdir(py_dir)
 		if result1 == result2 == result3 == True:
                     self.op4()
@@ -827,9 +844,9 @@ class TestCase8(object):
 				                        "test3": {"categories": {"get_obj": {"ops": 1, "successful_ops": 1},
 					                                         "list_bucket": {"ops": 1, "successful_ops": 1}}}}}
 		    os.chdir(ceph_path)
-                    result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict10)
-	            result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict11)
-                    result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict12)
+                    result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict10)
+	            result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict11)
+                    result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict12)
                     os.chdir(py_dir)
 		    if result1 == result2 == result3 == True:
 		        self.op5()
@@ -868,9 +885,9 @@ class TestCase8(object):
 				                            "test3": {"categories": {"get_obj": {"ops": 1, "successful_ops": 1},
 					                                             "list_bucket": {"ops": 1, "successful_ops": 1}}}}}
 			os.chdir(ceph_path)
-                        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict13)
-	                result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict14)
-                        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict15)
+                        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict13)
+	                result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict14)
+                        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict15)
                         os.chdir(py_dir)
 		        if result1 == result2 == result3 == True:
                             print "testcase8                          %s" % (ok_display("OK"))
@@ -889,16 +906,16 @@ class TestCase8(object):
 	
     def clean(self):
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin usage trim --uid=user1')
-        exec_command('./bin/radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
+        exec_based_on_version('radosgw-admin usage trim --uid=user1')
+        exec_based_on_version('radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
         os.chdir(py_dir)
 	exec_command('rm 6*.txt')
 
 class TestCase9(object):
     def prepare(self):
 	os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
+        exec_based_on_version('radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
         os.chdir(py_dir)
 
     def op1(self):
@@ -929,8 +946,8 @@ class TestCase9(object):
 			"user1": {"test1": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
         expect_dict2 = {"entries_size": 0}
 	os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+	result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
         os.chdir(py_dir)
 	if result1 == result2 == True:
             self.op2()	
@@ -940,8 +957,8 @@ class TestCase9(object):
 	    expect_dict4 = {"entries_size": 1,
 			    "user1:subuser1": {"test2": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
 	    os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict3)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict4)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict3)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict4)
             os.chdir(py_dir)    
 	    if result1 == result2 == True:
                 self.op3()
@@ -952,8 +969,8 @@ class TestCase9(object):
 		expect_dict6 = {"entries_size": 1,
 			        "user1:subuser1": {"test2": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}	
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict5)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict5)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
                 os.chdir(py_dir)
 		if result1 == result2 == True:
                     self.op4()
@@ -966,8 +983,8 @@ class TestCase9(object):
 			             "user1:subuser1": {"test1": {"categories": {"put_obj": {"ops": 1, "successful_ops": 1}}},
 			                                "test2": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}} 
 		    os.chdir(ceph_path)
-                    result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict7)
-	            result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
+                    result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict7)
+	            result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
                     os.chdir(py_dir)
 		    if result1 == result2 == True:
 		        self.op5()
@@ -981,8 +998,8 @@ class TestCase9(object):
 			                                    "test2": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1},
 			    	    	    	                                     "put_obj": {"ops": 1, "successful_ops": 1}}}}}	
 			os.chdir(ceph_path)
-                        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict9)
-	                result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
+                        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict9)
+	                result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
                         os.chdir(py_dir)
 		        if result1 == result2 == True:
                             print "testcase9                          %s" % (ok_display("OK"))
@@ -1022,8 +1039,8 @@ class TestCase10(object):
 			                   "test2": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1},
 			    	                                    "put_obj": {"ops": 1, "successful_ops": 1}}}}}
 	os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+	result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
         os.chdir(py_dir)
 	if result1 == result2 == True:
 	    self.op2()
@@ -1041,8 +1058,8 @@ class TestCase10(object):
 			    	                                        "put_obj": {"ops": 1, "successful_ops": 1},
 									"get_obj": {"ops": 2, "successful_ops": 2}}}}}
 	    os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict3)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict4)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict3)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict4)
             os.chdir(py_dir)
 	    if result1 == result2 == True:
                 print "testcase10                         %s" % (ok_display("OK"))
@@ -1081,8 +1098,8 @@ class TestCase11(object):
 			    	                                    "put_obj": {"ops": 1, "successful_ops": 1},
 							  	    "get_obj": {"ops": 2, "successful_ops": 2}}}}}	
 	os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+	result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
         os.chdir(py_dir)
 	if result1 == result2 == True:
 	    self.op2()
@@ -1104,8 +1121,8 @@ class TestCase11(object):
 									"get_obj": {"ops": 2, "successful_ops": 2},
 									"list_bucket": {"ops": 1, "successful_ops": 1}}}}}
 	    os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict3)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict4)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict3)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict4)
             os.chdir(py_dir)
 	    if result1 == result2 == True:
                 print "testcase11                         %s" % (ok_display("OK"))
@@ -1137,8 +1154,8 @@ class TestCase12(object):
 
     def clean(self):
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin usage trim --uid=user1')
-        exec_command('./bin/radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
+        exec_based_on_version('radosgw-admin usage trim --uid=user1')
+        exec_based_on_version('radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
         os.chdir(py_dir)
 	exec_command('rm 10*.txt')
 
@@ -1164,8 +1181,8 @@ class TestCase12(object):
 						                    "get_obj": {"ops": 2, "successful_ops": 2},
 								    "list_bucket": {"ops": 1, "successful_ops": 1}}}}}	
 	os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+	result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
         os.chdir(py_dir)
 	if result1 == result2 == True:
 	    self.op2()
@@ -1190,8 +1207,8 @@ class TestCase12(object):
 									"get_obj": {"ops": 2, "successful_ops": 2},
 									"list_bucket": {"ops": 1, "successful_ops": 1}}}}}
 	    os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict3)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict4)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict3)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict4)
             os.chdir(py_dir)
 	    if result1 == result2 == True:
 		self.op3()
@@ -1217,8 +1234,8 @@ class TestCase12(object):
 									    "get_obj": {"ops": 2, "successful_ops": 2},
 									    "list_bucket": {"ops": 1, "successful_ops": 1}}}}}
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict5)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict5)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
                 os.chdir(py_dir)
 		if result1 == result2 == True:
 	            self.op4()
@@ -1245,8 +1262,8 @@ class TestCase12(object):
 									        "list_bucket": {"ops": 1, "successful_ops": 1},
 										"delete_obj": {"ops": 1, "successful_ops": 1}}}}}
 		    os.chdir(ceph_path)
-                    result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict7)
-	            result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
+                    result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict7)
+	            result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict8)
                     os.chdir(py_dir) 
 		    if result1 == result2 == True:
 	                self.op5()
@@ -1275,8 +1292,8 @@ class TestCase12(object):
 									     	     "delete_obj": {"ops": 1, "successful_ops": 1},
 										     "delete_bucket": {"ops": 1, "successful_ops": 1}}}}}
                         os.chdir(ceph_path)
-                        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict9)
-	                result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
+                        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict9)
+	                result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
                         os.chdir(py_dir)
 			if result1 == result2 == True: 
                             print "testcase12                         %s" % (ok_display("OK"))
@@ -1296,12 +1313,12 @@ class TestCase12(object):
 class TestCase13(object):
     def prepare(self):
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
-        exec_command('./bin/radosgw-admin user create --uid=user2 --access-key=user2 --secret-key=user2 --display-name="user2"')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser2 --access=full --access-key=subuser2 --secret-key=subuser2')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user2 --subuser=subu01 --access=full --access-key=subu01 --secret-key=subu01')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user2 --subuser=subu02 --access=full --access-key=subu02 --secret-key=subu02')
+        exec_based_on_version('radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
+        exec_based_on_version('radosgw-admin user create --uid=user2 --access-key=user2 --secret-key=user2 --display-name="user2"')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser2 --access=full --access-key=subuser2 --secret-key=subuser2')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user2 --subuser=subu01 --access=full --access-key=subu01 --secret-key=subu01')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user2 --subuser=subu02 --access=full --access-key=subu02 --secret-key=subu02')
         os.chdir(py_dir)
 
     def op1(self):
@@ -1335,10 +1352,10 @@ class TestCase13(object):
 	expect_dict3 = {"entries_size": 0}
 	expect_dict4 = {"entries_size": 0}
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-	result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict3)
-	result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict4)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+	result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+	result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict3)
+	result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict4)
         os.chdir(py_dir)
 	if result1 == result2 == result3 == result4 == True:
             self.op2()	
@@ -1349,10 +1366,10 @@ class TestCase13(object):
 						                "put_obj": {"ops": 1, "successful_ops": 1}}}}}
 	    expect_dict8 = expect_dict4
             os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict5)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
-	    result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict7)
-	    result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict8)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict5)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
+	    result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict7)
+	    result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict8)
             os.chdir(py_dir)
 	    if result1 == result2 == result3 == result4 == True:
                 self.op3()
@@ -1367,10 +1384,10 @@ class TestCase13(object):
 		expect_dict11 = expect_dict7
 		expect_dict12 = expect_dict8
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict9)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
-	        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict11)
-	        result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict12)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict9)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
+	        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict11)
+	        result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict12)
                 os.chdir(py_dir)
 		if result1 == result2 == result3 == result4 == True:
                     self.op4()
@@ -1385,10 +1402,10 @@ class TestCase13(object):
 				     "user2:subu01": {"test02": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1},
 						                                "put_obj": {"ops": 1, "successful_ops": 1}}}}}
 		    os.chdir(ceph_path)
-                    result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict13)
-	            result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict14)
-	            result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict15)
-	            result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict16)
+                    result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict13)
+	            result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict14)
+	            result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict15)
+	            result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict16)
                     os.chdir(py_dir)
 		    if result1 == result2 == result3 == result4 == True:
                         print "testcase13                         %s" % (ok_display("OK"))
@@ -1439,10 +1456,10 @@ class TestCase14(object):
 		        "user2:subu01": {"test02": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1},
 						                   "put_obj": {"ops": 1, "successful_ops": 1}}}}}
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-	result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict3)
-	result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict4)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+	result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+	result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict3)
+	result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict4)
         os.chdir(py_dir)
 	if result1 == result2 == result3 == result4 == True:
             self.op2()	
@@ -1460,10 +1477,10 @@ class TestCase14(object):
 	    expect_dict7 = expect_dict3
 	    expect_dict8 = expect_dict4
             os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict5)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
-	    result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict7)
-	    result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict8)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict5)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
+	    result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict7)
+	    result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict8)
             os.chdir(py_dir)
 	    if result1 == result2 == result3 == result4 == True:
                 self.op3()
@@ -1477,10 +1494,10 @@ class TestCase14(object):
 						                     "put_obj": {"ops": 1, "successful_ops": 1}}}}}
 		expect_dict12 = expect_dict8
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict9)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
-	        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict11)
-	        result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict12)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict9)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
+	        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict11)
+	        result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict12)
                 os.chdir(py_dir)
 		if result1 == result2 == result3 == result4 == True:
                     self.op4()
@@ -1498,10 +1515,10 @@ class TestCase14(object):
 						                                "put_obj": {"ops": 1, "successful_ops": 1},
 										"get_obj": {"ops": 1, "successful_ops": 1}}}}}
 		    os.chdir(ceph_path)
-                    result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict13)
-	            result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict14)
-	            result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict15)
-	            result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict16)
+                    result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict13)
+	            result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict14)
+	            result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict15)
+	            result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict16)
                     os.chdir(py_dir)
 		    if result1 == result2 == result3 == result4 == True:
                         print "testcase14                         %s" % (ok_display("OK"))
@@ -1558,10 +1575,10 @@ class TestCase15(object):
 						                   "put_obj": {"ops": 1, "successful_ops": 1},
 							           "get_obj": {"ops": 1, "successful_ops": 1}}}}}
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-	result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict3)
-	result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict4)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+	result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+	result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict3)
+	result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict4)
         os.chdir(py_dir)
 	if result1 == result2 == result3 == result4 == True:
             self.op2()	
@@ -1582,10 +1599,10 @@ class TestCase15(object):
 	    expect_dict7 = expect_dict3
 	    expect_dict8 = expect_dict4
             os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict5)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
-	    result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict7)
-	    result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict8)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict5)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
+	    result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict7)
+	    result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict8)
             os.chdir(py_dir)
 	    if result1 == result2 == result3 == result4 == True:
                 self.op3()
@@ -1601,10 +1618,10 @@ class TestCase15(object):
 						                     "get_obj": {"ops": 1, "successful_ops": 1}}}}}
 		expect_dict12 = expect_dict8
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict9)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
-	        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict11)
-	        result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict12)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict9)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
+	        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict11)
+	        result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict12)
                 os.chdir(py_dir)
 		if result1 == result2 == result3 == result4 == True:
                     self.op4()
@@ -1625,10 +1642,10 @@ class TestCase15(object):
 										"get_obj": {"ops": 1, "successful_ops": 1},
 										"list_bucket": {"ops": 1, "successful_ops": 1}}}}}
 		    os.chdir(ceph_path)
-                    result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict13)
-	            result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict14)
-	            result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict15)
-	            result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict16)
+                    result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict13)
+	            result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict14)
+	            result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict15)
+	            result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict16)
                     os.chdir(py_dir)
 		    if result1 == result2 == result3 == result4 == True:
                         print "testcase15                         %s" % (ok_display("OK"))
@@ -1664,10 +1681,10 @@ class TestCase16(object):
 
     def clean(self):
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin usage trim --uid=user1')
-        exec_command('./bin/radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
-        exec_command('./bin/radosgw-admin usage trim --uid=user2')
-        exec_command('./bin/radosgw-admin user rm --uid=user2 --purge-data --purge-keys')
+        exec_based_on_version('radosgw-admin usage trim --uid=user1')
+        exec_based_on_version('radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
+        exec_based_on_version('radosgw-admin usage trim --uid=user2')
+        exec_based_on_version('radosgw-admin user rm --uid=user2 --purge-data --purge-keys')
         os.chdir(py_dir)
 	exec_command('rm 14*.txt')
 
@@ -1705,10 +1722,10 @@ class TestCase16(object):
 							           "get_obj": {"ops": 1, "successful_ops": 1},
 								   "list_bucket": {"ops": 1, "successful_ops": 1}}}}}
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-	result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-	result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict3)
-	result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict4)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+	result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+	result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict3)
+	result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict4)
         os.chdir(py_dir)
 	if result1 == result2 == result3 == result4 == True:
             self.op2()	
@@ -1735,10 +1752,10 @@ class TestCase16(object):
 	    expect_dict7 = expect_dict3
 	    expect_dict8 = expect_dict4
             os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict5)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
-	    result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict7)
-	    result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict8)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict5)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict6)
+	    result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict7)
+	    result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict8)
             os.chdir(py_dir)
 	    if result1 == result2 == result3 == result4 == True:
                 self.op3()
@@ -1757,10 +1774,10 @@ class TestCase16(object):
 						                     "list_bucket": {"ops": 1, "successful_ops": 1}}}}}
 		expect_dict12 = expect_dict8
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict9)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
-	        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict11)
-	        result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict12)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict9)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict10)
+	        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict11)
+	        result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict12)
                 os.chdir(py_dir)
 		if result1 == result2 == result3 == result4 == True:
                     self.op4()
@@ -1787,10 +1804,10 @@ class TestCase16(object):
 										"delete_obj": {"ops": 1, "successful_ops": 1},
 								                "delete_bucket": {"ops": 1, "successful_ops": 1}}}}}
 		    os.chdir(ceph_path)
-                    result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict13)
-	            result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict14)
-	            result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict15)
-	            result4 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict16)
+                    result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict13)
+	            result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict14)
+	            result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict15)
+	            result4 = verify_show_based_on_version('radosgw-admin usage show --uid=user2 --subuser=subu01', expect_dict16)
                     os.chdir(py_dir)
 		    if result1 == result2 == result3 == result4 == True:
                         print "testcase16                         %s" % (ok_display("OK"))
@@ -1808,9 +1825,9 @@ class TestCase16(object):
 class TestCase17(object):
     def prepare(self):
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
-        exec_command('./bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser2 --access=full --access-key=subuser2 --secret-key=subuser2')
+        exec_based_on_version('radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser1 --access=full --access-key=subuser1 --secret-key=subuser1')
+        exec_based_on_version('radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser=subuser2 --access=full --access-key=subuser2 --secret-key=subuser2')
         os.chdir(py_dir)
 
     def op1(self):
@@ -1821,12 +1838,12 @@ class TestCase17(object):
 
     def op2(self):
         os.chdir(ceph_path)
-	exec_command('./bin/radosgw-admin subuser rm --uid=user1 --subuser=subuser1')
+	exec_based_on_version('radosgw-admin subuser rm --uid=user1 --subuser=subuser1')
         os.chdir(py_dir)
 
     def op3(self):
 	os.chdir(ceph_path)
-	exec_command('./bin/radosgw-admin subuser rm --uid=user1 --subuser=subuser2')
+	exec_based_on_version('radosgw-admin subuser rm --uid=user1 --subuser=subuser2')
         os.chdir(py_dir)
 
     def run(self):	
@@ -1843,9 +1860,9 @@ class TestCase17(object):
 	self.op1()
         result1 = result2 = result3 = False
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
-        result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict2)
+        result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict3)
         os.chdir(py_dir)
 
 	if result1 == result2 == result3 == True:
@@ -1853,14 +1870,14 @@ class TestCase17(object):
             expect_dict4 = expect_dict1
 	    expect_dict5 = expect_dict3
             os.chdir(ceph_path)
-            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict4)
-            result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict5)
+            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict4)
+            result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser2', expect_dict5)
             os.chdir(py_dir)
 	    if result1 == result2 == True:
 	        self.op3()
 		expect_dict6 = expect_dict4
                 os.chdir(ceph_path)
-                result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict4)
+                result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict6)
                 os.chdir(py_dir)
 		if result1 == True: 
 	            print "testcase17                         %s" % (ok_display("OK"))
@@ -1878,21 +1895,21 @@ class TestCase17(object):
         exec_command('s3cmd -c user1.s3cfg rb s3://test2')
 	time.sleep(30)
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin usage trim --uid=user1')
-        exec_command('./bin/radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
+        exec_based_on_version('radosgw-admin usage trim --uid=user1')
+        exec_based_on_version('radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
         os.chdir(py_dir)
 
 class TestCase18(object):
     def prepare(self):
         os.chdir(ceph_path)
-        exec_command('./bin/radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
-        exec_command('./bin/radosgw-admin user create --uid=user2 --access-key=user2 --secret-key=user2 --display-name="user2"')
+        exec_based_on_version('radosgw-admin user create --uid=user1 --access-key=user1 --secret-key=user1 --display-name="user1"')
+        exec_based_on_version('radosgw-admin user create --uid=user2 --access-key=user2 --secret-key=user2 --display-name="user2"')
 	subuser_id = ''
 	command = ''
 	for i in range(1, 1001):
 	    subuser_id = 'subuser%d' % (i)
-	    command = './bin/radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser={subuser} --access=full --access-key={subuser} --secret-key={subuser}'.format(subuser = subuser_id)
-            exec_command(command)
+	    command = 'radosgw-admin subuser create --key-type=s3 --uid=user1 --subuser={subuser} --access=full --access-key={subuser} --secret-key={subuser}'.format(subuser = subuser_id)
+            exec_based_on_version(command)
         os.chdir(py_dir)
 
     def op1(self):
@@ -1917,10 +1934,10 @@ class TestCase18(object):
 	exec_command('s3cmd -c user2.s3cfg rb s3://test3')
 	time.sleep(30)
 	os.chdir(ceph_path)
-	exec_command('./bin/radosgw-admin usage trim --uid=user1')
-	exec_command('./bin/radosgw-admin usage trim --uid=user2')
-        exec_command('./bin/radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
-        exec_command('./bin/radosgw-admin user rm --uid=user2 --purge-data --purge-keys')
+	exec_based_on_version('radosgw-admin usage trim --uid=user1')
+	exec_based_on_version('radosgw-admin usage trim --uid=user2')
+        exec_based_on_version('radosgw-admin user rm --uid=user1 --purge-data --purge-keys')
+        exec_based_on_version('radosgw-admin user rm --uid=user2 --purge-data --purge-keys')
         os.chdir(py_dir)
 
     def run(self):
@@ -1931,14 +1948,14 @@ class TestCase18(object):
 			"user1": {"test1": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
 	expect_dict2 = {"entries_size": 0}
         os.chdir(ceph_path)
-        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict1)
-        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict2)
+        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict1)
+        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict2)
 	subuser_id = ''
 	command = ''
 	for i in range(1, 1001):
 	    subuser_id = 'subuser%d' % (i)
-	    command = './bin/radosgw-admin usage show --uid=user1 --subuser={subuser}'.format(subuser = subuser_id)
-            result3 = verify_show_response_msg(command, expect_dict2)
+	    command = 'radosgw-admin usage show --uid=user1 --subuser={subuser}'.format(subuser = subuser_id)
+            result3 = verify_show_based_on_version(command, expect_dict2)
 	    if result3 == False:
 	        break
         os.chdir(py_dir)
@@ -1951,15 +1968,15 @@ class TestCase18(object):
 			    "user1:subuser1": {"test2": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
 	    expect_dict5 = expect_dict2
 	    os.chdir(ceph_path)
-	    result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict3)
-	    result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict5)
+	    result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict3)
+	    result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict5)
 	    for i in range(1, 1001):
-	        subuser_id = 'subuser%d' % (i)
-	        command = './bin/radosgw-admin usage show --uid=user1 --subuser={subuser}'.format(subuser = subuser_id)
 		if i == 1:
-		    result3 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict4)
+		    result3 = verify_show_based_on_version('radosgw-admin usage show --uid=user1 --subuser=subuser1', expect_dict4)
 		else:
-		    result3 = verify_show_response_msg(command, expect_dict5)
+	            subuser_id = 'subuser%d' % (i)
+	            command = 'radosgw-admin usage show --uid=user1 --subuser={subuser}'.format(subuser = subuser_id)
+		    result3 = verify_show_based_on_version(command, expect_dict5)
 
 	        if result3 == False:
 		    break
@@ -1975,17 +1992,17 @@ class TestCase18(object):
 			        "user1:subuser666": {"test2": {"categories": {"put_obj": {"ops": 1, "successful_ops": 1}}}}}
 		expect_dict9 = expect_dict5
 	        os.chdir(ceph_path)
-	        result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict6)
-	        result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict9)
+	        result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict6)
+	        result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict9)
 	        for i in range(1, 1001):
 	            subuser_id = 'subuser%d' % (i)
-	            command = './bin/radosgw-admin usage show --uid=user1 --subuser={subuser}'.format(subuser = subuser_id)
+	            command = 'radosgw-admin usage show --uid=user1 --subuser={subuser}'.format(subuser = subuser_id)
 		    if i == 1:
-		        result3 = verify_show_response_msg(command, expect_dict7)
+		        result3 = verify_show_based_on_version(command, expect_dict7)
 		    elif i == 666:
-                        result3 = verify_show_response_msg(command, expect_dict8)
+                        result3 = verify_show_based_on_version(command, expect_dict8)
 		    else:
-		        result3 = verify_show_response_msg(command, expect_dict9)
+		        result3 = verify_show_based_on_version(command, expect_dict9)
 
 	            if result3 == False:
 		        break
@@ -1999,17 +2016,17 @@ class TestCase18(object):
 			             "user2": {"test3": {"categories": {"create_bucket": {"ops": 1, "successful_ops": 1}}}}}
 		    expect_dict14 = expect_dict9
                     os.chdir(ceph_path)
-	            result1 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user1', expect_dict10)
-	            result2 = verify_show_response_msg('./bin/radosgw-admin usage show --uid=user2', expect_dict13)
+	            result1 = verify_show_based_on_version('radosgw-admin usage show --uid=user1', expect_dict10)
+	            result2 = verify_show_based_on_version('radosgw-admin usage show --uid=user2', expect_dict13)
 	            for i in range(1, 1001):
 	                subuser_id = 'subuser%d' % (i)
-	                command = './bin/radosgw-admin usage show --uid=user1 --subuser={subuser}'.format(subuser = subuser_id)
+	                command = 'radosgw-admin usage show --uid=user1 --subuser={subuser}'.format(subuser = subuser_id)
 		        if i == 1:
-		            result3 = verify_show_response_msg(command, expect_dict11)
+		            result3 = verify_show_based_on_version(command, expect_dict11)
 		        elif i == 666:
-                            result3 = verify_show_response_msg(command, expect_dict12)
+                            result3 = verify_show_based_on_version(command, expect_dict12)
 		        else:
-		            result3 = verify_show_response_msg(command, expect_dict14)
+		            result3 = verify_show_based_on_version(command, expect_dict14)
 
 	                if result3 == False:
 		            break
